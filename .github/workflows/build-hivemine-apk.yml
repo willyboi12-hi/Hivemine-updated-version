@@ -133,16 +133,19 @@ jobs:
         run: |
           cd "$PROJECT_DIR"
           
-          # 1. Fix missing TextView import in MainActivity.java
-          MAIN_ACTIVITY="app/src/main/java/com/hiveminemobile/MainActivity.java"
+          # 1. Find MainActivity.java path dynamically
+          MAIN_ACTIVITY=$(find . -type f -name "MainActivity.java" -print -quit)
           if [ -f "$MAIN_ACTIVITY" ]; then
             if ! grep -q "import android.widget.TextView;" "$MAIN_ACTIVITY"; then
               sed -i '/import android.widget.Button;/a import android.widget.TextView;' "$MAIN_ACTIVITY"
             fi
+            
+            # Fix ui.body parameter mismatch call
+            sed -i 's/ui.body("Hands-free mode keeps listening for short natural phrases while the foreground voice service is active. Android shows a microphone privacy indicator and the service uses extra battery\.", Ui.MUTED, 10, false)/ui.body("Hands-free mode keeps listening for short natural phrases while the foreground voice service is active. Android shows a microphone privacy indicator and the service uses extra battery.")/g' "$MAIN_ACTIVITY"
           fi
 
           # 2. Fix missing ObservationFreshness import in MacroAccessibilityService.java
-          MACRO_SERVICE="app/src/main/java/com/hiveminemobile/MacroAccessibilityService.java"
+          MACRO_SERVICE=$(find . -type f -name "MacroAccessibilityService.java" -print -quit)
           if [ -f "$MACRO_SERVICE" ]; then
             if ! grep -q "import com.hiveminemobile.ai.control.ObservationFreshness;" "$MACRO_SERVICE"; then
               sed -i '/package com.hiveminemobile;/a import com.hiveminemobile.ai.control.ObservationFreshness;' "$MACRO_SERVICE"
@@ -150,13 +153,11 @@ jobs:
           fi
 
           # 3. Cleanly add autoFarm field to Config.java right inside the class declaration
-          CONFIG_FILE="app/src/main/java/com/hiveminemobile/Config.java"
+          CONFIG_FILE=$(find . -type f -name "Config.java" -print -quit)
           if [ -f "$CONFIG_FILE" ]; then
-            # Clean any previously broken mock methods if they exist from past runs
             sed -i '/public void save() {}/d' "$CONFIG_FILE"
             
             if ! grep -q "public boolean autoFarm;" "$CONFIG_FILE"; then
-              # Insert autoFarm right after the class declaration line
               sed -i '/class Config {/a \    public boolean autoFarm = false;' "$CONFIG_FILE"
             fi
           fi
